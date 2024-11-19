@@ -1,38 +1,41 @@
-on: [push]
+name: Rodar Testes JMeter
+
+on:
+  push:
+    branches:
+      - master
 
 jobs:
-  Main:
+  build:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - name: Checar repositório
+        uses: actions/checkout@v2
 
-      - name: Set up JMeter
+      - name: Atualizar pacotes e instalar dependências
         run: |
           sudo apt update
-          sudo apt install openjdk-11-jdk -y
+          sudo apt install -y openjdk-11-jdk ca-certificates wget unzip
+
+      - name: Instalar JMeter
+        run: |
           wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.5.zip
           unzip apache-jmeter-5.5.zip
           sudo mv apache-jmeter-5.5 /opt/jmeter
-          export PATH=$PATH:/opt/jmeter/bin
+          echo "export PATH=\$PATH:/opt/jmeter/bin" >> ~/.bashrc
+          source ~/.bashrc
 
-      - name: Run JMeter Tests
+      - name: Verificar instalação do JMeter
         run: |
-          for jmx_file in jmeter-files/*.jmx; do
-            echo "Running test: $jmx_file"
-            /opt/jmeter/bin/jmeter -n -t $jmx_file -l "results/$(basename $jmx_file .jmx).jtl"
-          done
+          jmeter -v
 
-      - name: Upload JMeter Results
-        uses: actions/upload-artifact@v3
+      - name: Rodar testes JMeter
+        run: |
+          jmeter -n -t caminho/para/seu/arquivo.jmx -l resultado.jtl
+          
+      - name: Upload Relatório JMeter
+        uses: actions/upload-artifact@v2
         with:
           name: jmeter-results
-          path: results/*.jtl
-
-      - name: Analyze Results with Latency Lingo
-        uses: latency-lingo/github-action@v0.0.2
-        with:
-          api-key: ${{ secrets.LATENCY_LINGO_API_KEY }}
-          file: results/*.jtl
-          label: 'Automated JMeter Test Results'
-          format: jmeter
+          path: resultado.jtl
