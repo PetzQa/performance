@@ -1,26 +1,26 @@
-name: Teste de Performance com JMeter
+name: Teste de Performance com JMeter e Latency Lingo
 
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-      # Configura o Node.js na versão 20
+      # Configurar Node.js
       - name: Configurar Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      # Checkout do código do repositório
+      # Checar repositório
       - name: Checar repositório
         uses: actions/checkout@v3
 
-      # Baixar e instalar JMeter 5.6.3
+      # Baixar e instalar JMeter
       - name: Baixar e instalar JMeter
         run: |
           wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip
@@ -30,17 +30,24 @@ jobs:
       # Rodar os testes JMeter
       - name: Rodar testes JMeter
         run: |
-          # Caminho para o script de teste JMeter e arquivos necessários
-          ./apache-jmeter-5.6.3/bin/jmeter -n -t path/to/test-plan.jmx -l results.jtl
+          ./apache-jmeter-5.6.3/bin/jmeter -n -t jmeter-tests/test-plan.jmx -l results.jtl
 
-      # Gerar o relatório
+      # Enviar resultados para o Latency Lingo via API
+      - name: Enviar resultados para o Latency Lingo
+        run: |
+          curl -X POST https://api.latencylingo.com/results \
+            -H "Authorization: Bearer ${{ secrets.LATENCY_LINGO_API_KEY }}" \
+            -F "file=@results.jtl" \
+            -F "testName=Test_Performance"
+
+      # Gerar Relatório de Performance
       - name: Gerar Relatório de Performance
         run: |
-          ./apache-jmeter-5.6.3/bin/jmeter -g results.jtl -o /path/to/output-report
-          
-      # Enviar relatório para a pasta específica ou como artefato
+          ./apache-jmeter-5.6.3/bin/jmeter -g results.jtl -o ./output-report
+
+      # Enviar relatório para o repositório
       - name: Enviar relatório para o repositório
         uses: actions/upload-artifact@v3
         with:
           name: performance-report
-          path: /path/to/output-report
+          path: ./output-report
