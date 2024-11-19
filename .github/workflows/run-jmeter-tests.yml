@@ -1,4 +1,4 @@
-name: Rodar Testes JMeter
+name: Teste de Performance com JMeter
 
 on:
   push:
@@ -6,36 +6,39 @@ on:
       - master
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    
+
     steps:
+      # Configura o Node.js na versão 20
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # Checkout do código do repositório
       - name: Checar repositório
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Atualizar pacotes e instalar dependências
-        run: |
-          sudo apt update
-          sudo apt install -y openjdk-11-jdk ca-certificates wget unzip
+      # Instalação das dependências, caso necessário (exemplo para um projeto Node.js)
+      - name: Instalar dependências
+        run: npm install
 
-      - name: Instalar JMeter
-        run: |
-          wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.5.zip
-          unzip apache-jmeter-5.5.zip
-          sudo mv apache-jmeter-5.5 /opt/jmeter
-          echo "export PATH=\$PATH:/opt/jmeter/bin" >> ~/.bashrc
-          source ~/.bashrc
-
-      - name: Verificar instalação do JMeter
-        run: |
-          jmeter -v
-
+      # Rodar os testes JMeter
       - name: Rodar testes JMeter
         run: |
-          jmeter -n -t caminho/para/seu/arquivo.jmx -l resultado.jtl
+          # Comando para executar seus testes JMeter
+          jmeter -n -t path/to/test-plan.jmx -l results.jtl
+
+      # Gerar o relatório
+      - name: Gerar Relatório de Performance
+        run: |
+          # Comando para gerar o relatório em HTML ou outro formato desejado
+          jmeter -g results.jtl -o /path/to/output-report
           
-      - name: Upload Relatório JMeter
-        uses: actions/upload-artifact@v2
+      # Enviar relatório para a pasta específica ou como artefato
+      - name: Enviar relatório para o repositório
+        uses: actions/upload-artifact@v3
         with:
-          name: jmeter-results
-          path: resultado.jtl
+          name: performance-report
+          path: /path/to/output-report
