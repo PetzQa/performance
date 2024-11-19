@@ -23,27 +23,40 @@ jobs:
       # Baixar e instalar JMeter
       - name: Baixar e instalar JMeter
         run: |
-          wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip
+          wget https://dlcdn.apache.org/jmeter/binaries/apache-jmeter-5.6.3.zip
           unzip apache-jmeter-5.6.3.zip
           rm apache-jmeter-5.6.3.zip
 
-      # Rodar os testes JMeter
+      # Listar os arquivos JMX na pasta
+      - name: Listar arquivos JMX
+        run: |
+          ls jmeter-tests/*.jmx
+
+      # Rodar todos os testes JMeter
       - name: Rodar testes JMeter
         run: |
-          ./apache-jmeter-5.6.3/bin/jmeter -n -t jmeter-tests/test-plan.jmx -l results.jtl
+          for jmx_file in jmeter-tests/*.jmx; do
+            echo "Rodando o teste: $jmx_file"
+            ./apache-jmeter-5.6.3/bin/jmeter -n -t "$jmx_file" -l "results/$(basename $jmx_file .jmx).jtl"
+          done
 
       # Enviar resultados para o Latency Lingo via API
       - name: Enviar resultados para o Latency Lingo
         run: |
-          curl -X POST https://api.latencylingo.com/results \
-            -H "Authorization: Bearer ${{ secrets.LATENCY_LINGO_API_KEY }}" \
-            -F "file=@results.jtl" \
-            -F "testName=Test_Performance"
+          for result_file in results/*.jtl; do
+            echo "Enviando resultado para o Latency Lingo: $result_file"
+            curl -X POST https://api.latencylingo.com/results \
+              -H "Authorization: Bearer ${{ secrets.LATENCY_LINGO_API_KEY }}" \
+              -F "file=@$result_file" \
+              -F "testName=$(basename $result_file .jtl)"
+          done
 
       # Gerar Relatório de Performance
       - name: Gerar Relatório de Performance
         run: |
-          ./apache-jmeter-5.6.3/bin/jmeter -g results.jtl -o ./output-report
+          for result_file in results/*.jtl; do
+            ./apache-jmeter-5.6.3/bin/jmeter -g "$result_file" -o "./output-report/$(basename $result_file .jtl)"
+          done
 
       # Enviar relatório para o repositório
       - name: Enviar relatório para o repositório
@@ -51,3 +64,4 @@ jobs:
         with:
           name: performance-report
           path: ./output-report
+
