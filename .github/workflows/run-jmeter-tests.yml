@@ -27,15 +27,20 @@ jobs:
           unzip apache-jmeter-5.6.3.zip
           rm apache-jmeter-5.6.3.zip
 
-      # Listar os arquivos JMX na pasta
-      - name: Listar arquivos JMX
+      # Verificar pasta jmeter-files e listar arquivos JMX
+      - name: Verificar pasta e listar arquivos JMX
         run: |
-          ls jmeter-tests/*.jmx
+          if [ -d "jmeter-files" ]; then
+            echo "Pasta jmeter-files encontrada."
+            ls jmeter-files/*.jmx || echo "Nenhum arquivo JMX encontrado."
+          else
+            echo "A pasta jmeter-files não foi encontrada."
+          fi
 
       # Rodar todos os testes JMeter
       - name: Rodar testes JMeter
         run: |
-          for jmx_file in jmeter-tests/*.jmx; do
+          for jmx_file in jmeter-files/*.jmx; do
             echo "Rodando o teste: $jmx_file"
             ./apache-jmeter-5.6.3/bin/jmeter -n -t "$jmx_file" -l "results/$(basename $jmx_file .jmx).jtl"
           done
