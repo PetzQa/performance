@@ -1,23 +1,38 @@
 on: [push]
+
 jobs:
   Main:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up JMeter
+        run: |
+          sudo apt update
+          sudo apt install openjdk-11-jdk -y
+          wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.5.zip
+          unzip apache-jmeter-5.5.zip
+          sudo mv apache-jmeter-5.5 /opt/jmeter
+          export PATH=$PATH:/opt/jmeter/bin
+
       - name: Run JMeter Tests
-        uses: QAInsights/PerfAction@v3.1
-        with:
-          test-plan-path: jmeter-files/test-plan.jmx
-          args: ""
-      - name: Upload Results
-        uses: actions/upload-artifact@v3  # Atualizado para v3
+        run: |
+          for jmx_file in jmeter-files/*.jmx; do
+            echo "Running test: $jmx_file"
+            /opt/jmeter/bin/jmeter -n -t $jmx_file -l "results/$(basename $jmx_file .jmx).jtl"
+          done
+
+      - name: Upload JMeter Results
+        uses: actions/upload-artifact@v3
         with:
           name: jmeter-results
-          path: result.jtl
+          path: results/*.jtl
+
       - name: Analyze Results with Latency Lingo
         uses: latency-lingo/github-action@v0.0.2
         with:
           api-key: ${{ secrets.LATENCY_LINGO_API_KEY }}
-          file: result.jtl
-          label: Checkout Flow Automated Test Plan
+          file: results/*.jtl
+          label: 'Automated JMeter Test Results'
           format: jmeter
