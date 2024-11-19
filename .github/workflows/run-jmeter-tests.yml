@@ -3,7 +3,7 @@ name: Teste de Performance com JMeter
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   test:
@@ -20,21 +20,23 @@ jobs:
       - name: Checar repositório
         uses: actions/checkout@v3
 
-      # Instalação das dependências, caso necessário (exemplo para um projeto Node.js)
-      - name: Instalar dependências
-        run: npm install
+      # Baixar e instalar JMeter 5.6.3
+      - name: Baixar e instalar JMeter
+        run: |
+          wget https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip
+          unzip apache-jmeter-5.6.3.zip
+          rm apache-jmeter-5.6.3.zip
 
       # Rodar os testes JMeter
       - name: Rodar testes JMeter
         run: |
-          # Comando para executar seus testes JMeter
-          jmeter -n -t path/to/test-plan.jmx -l results.jtl
+          # Caminho para o script de teste JMeter e arquivos necessários
+          ./apache-jmeter-5.6.3/bin/jmeter -n -t path/to/test-plan.jmx -l results.jtl
 
       # Gerar o relatório
       - name: Gerar Relatório de Performance
         run: |
-          # Comando para gerar o relatório em HTML ou outro formato desejado
-          jmeter -g results.jtl -o /path/to/output-report
+          ./apache-jmeter-5.6.3/bin/jmeter -g results.jtl -o /path/to/output-report
           
       # Enviar relatório para a pasta específica ou como artefato
       - name: Enviar relatório para o repositório
